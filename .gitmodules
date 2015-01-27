@@ -1,0 +1,3 @@
+[submodule "ext/pthreads"]
+	path = ext/pthreads
+	url = https://github.com/toshiyuki-ogawa/pthreads

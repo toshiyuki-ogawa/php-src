@@ -128,7 +128,7 @@ xmlDocPtr soap_xmlParseFile(const char *filename TSRMLS_DC)
 	return ret;
 }
 
-xmlDocPtr soap_xmlParseMemory(const void *buf, size_t buf_size)
+xmlDocPtr soap_xmlParseMemory(const void *buf, size_t buf_size TSRMLS_DC)
 {
 	xmlParserCtxtPtr ctxt = NULL;
 	xmlDocPtr ret;
