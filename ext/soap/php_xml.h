@@ -31,7 +31,7 @@
 #define attr_is_equal(node, name) attr_is_equal_ex(node, name, NULL)
 
 xmlDocPtr soap_xmlParseFile(const char *filename TSRMLS_DC);
-xmlDocPtr soap_xmlParseMemory(const void *buf, size_t size);
+xmlDocPtr soap_xmlParseMemory(const void *buf, size_t size TSRMLS_DC);
 
 xmlNsPtr attr_find_ns(xmlAttrPtr node);
 xmlNsPtr node_find_ns(xmlNodePtr node);

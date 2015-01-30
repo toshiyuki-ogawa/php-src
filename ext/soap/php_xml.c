@@ -133,8 +133,6 @@ xmlDocPtr soap_xmlParseMemory(const void *buf, size_t buf_size TSRMLS_DC)
 	xmlParserCtxtPtr ctxt = NULL;
 	xmlDocPtr ret;
 
-	TSRMLS_FETCH();
-
 /*
 	xmlInitParser();
 */

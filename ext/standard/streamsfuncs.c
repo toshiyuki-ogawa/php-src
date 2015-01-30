@@ -638,6 +638,9 @@ static int stream_array_to_fd_set(zval *stream_array, fd_set *fds, php_socket_t 
 
 			php_socket_t this_fd = (php_socket_t)tmp_fd;
 
+			if (this_fd > FD_SETSIZE)
+				continue;
+
 			PHP_SAFE_FD_SET(this_fd, fds);
 
 			if (this_fd > *max_fd) {

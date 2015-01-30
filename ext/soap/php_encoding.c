@@ -633,7 +633,7 @@ xmlNodePtr to_xml_user(encodeTypePtr type, zval *data, int style, xmlNodePtr par
 			soap_error0(E_ERROR, "Encoding: Error calling to_xml callback");
 		}
 		if (Z_TYPE_P(return_value) == IS_STRING) {		
-			xmlDocPtr doc = soap_xmlParseMemory(Z_STRVAL_P(return_value), Z_STRLEN_P(return_value));
+			xmlDocPtr doc = soap_xmlParseMemory(Z_STRVAL_P(return_value), Z_STRLEN_P(return_value) TSRMLS_CC);
 			if (doc && doc->children) {				
 				ret = xmlDocCopyNode(doc->children, parent->doc, 1);
 			}

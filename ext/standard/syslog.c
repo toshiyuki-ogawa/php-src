@@ -42,6 +42,7 @@ static void start_syslog(TSRMLS_D);
  */
 PHP_MINIT_FUNCTION(syslog)
 {
+#if !SUHOSIN_PATCH
 	/* error levels */
 	REGISTER_LONG_CONSTANT("LOG_EMERG", LOG_EMERG, CONST_CS | CONST_PERSISTENT); /* system unusable */
 	REGISTER_LONG_CONSTANT("LOG_ALERT", LOG_ALERT, CONST_CS | CONST_PERSISTENT); /* immediate action required */
@@ -96,6 +97,7 @@ PHP_MINIT_FUNCTION(syslog)
 #ifdef LOG_PERROR
 	/* AIX doesn't have LOG_PERROR */
 	REGISTER_LONG_CONSTANT("LOG_PERROR", LOG_PERROR, CONST_CS | CONST_PERSISTENT); /*log to stderr*/
+#endif
 #endif
 	BG(syslog_device)=NULL;
 

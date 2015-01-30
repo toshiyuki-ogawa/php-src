@@ -40,7 +40,7 @@ int parse_packet_soap(zval *this_ptr, char *buffer, int buffer_size, sdlFunction
 	}
 
 	/* Parse XML packet */
-	response = soap_xmlParseMemory(buffer, buffer_size);
+	response = soap_xmlParseMemory(buffer, buffer_size TSRMLS_CC);
 
 	if (!response) {
 		add_soap_fault(this_ptr, "Client", "looks like we got no XML document", NULL, NULL TSRMLS_CC);

@@ -620,7 +620,7 @@ MYSQLND_METHOD(mysqlnd_conn, connect)(MYSQLND * conn,
 		if (host_len == sizeof("localhost") - 1 && !strncasecmp(host, "localhost", host_len)) {
 			DBG_INF_FMT("socket=%s", socket_or_pipe? socket_or_pipe:"n/a");
 			if (!socket_or_pipe) {
-				socket_or_pipe = "/tmp/mysql.sock";
+				socket_or_pipe = "/var/run/mysqld/mysqld.sock";
 			}
 			transport_len = spprintf(&transport, 0, "unix://%s", socket_or_pipe);
 			unix_socket = TRUE;

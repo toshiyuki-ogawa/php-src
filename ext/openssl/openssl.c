@@ -4846,7 +4846,7 @@ PHP_FUNCTION(openssl_decrypt)
 	int data_len, method_len, password_len, iv_len = 0;
 	const EVP_CIPHER *cipher_type;
 	EVP_CIPHER_CTX cipher_ctx;
-	int i, outlen, keylen;
+	int i = 0, outlen, keylen;
 	unsigned char *outbuf, *key;
 	int base64_str_len;
 	char *base64_str = NULL;

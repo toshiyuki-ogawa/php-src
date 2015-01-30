@@ -128,7 +128,7 @@ AC_DEFUN([PHP_GD_XPM],[
   if test "$PHP_XPM_DIR" != "no"; then
 
     for i in $PHP_XPM_DIR /usr/local /usr/X11R6 /usr; do
-      test -f $i/$PHP_LIBDIR/libXpm.$SHLIB_SUFFIX_NAME || test -f $i/$PHP_LIBDIR/libXpm.a && GD_XPM_DIR=$i && break
+      test -f $i/$PHP_LIBDIR/libXpm.$SHLIB_SUFFIX_NAME || test -f $i/$PHP_LIBDIR/$DEB_HOST_MULTIARCH/libXpm.$SHLIB_SUFFIX_NAME || test -f $i/$PHP_LIBDIR/libXpm.a && GD_XPM_DIR=$i && break
     done
 
     if test -z "$GD_XPM_DIR"; then
@@ -359,7 +359,7 @@ dnl Header path
   done
 
 dnl Library path
-  for i in $PHP_LIBDIR/gd1.3 $PHP_LIBDIR/gd $PHP_LIBDIR gd1.3 gd ""; do
+  for i in $PHP_LIBDIR/$DEB_HOST_MULTIARCH $PHP_LIBDIR/gd1.3 $PHP_LIBDIR/gd $PHP_LIBDIR gd1.3 gd ""; do
     test -f "$PHP_GD/$i/libgd.$SHLIB_SUFFIX_NAME" || test -f "$PHP_GD/$i/libgd.a" && GD_LIB="$PHP_GD/$i"
   done
 

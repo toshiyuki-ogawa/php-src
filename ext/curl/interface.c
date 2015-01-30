@@ -172,6 +172,11 @@ static int php_curl_option_url(php_curl *ch, const char *url, const int len) /* 
 #endif
 	TSRMLS_FETCH();
 
+	if (strlen(url) != len) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Curl option contains invalid characters (\\0)");
+		return 0;
+	}
+
 	/* Disable file:// if open_basedir or safe_mode are used */
 	if ((PG(open_basedir) && *PG(open_basedir)) || PG(safe_mode)) {
 #if LIBCURL_VERSION_NUM >= 0x071304

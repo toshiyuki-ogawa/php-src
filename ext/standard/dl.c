@@ -77,12 +77,7 @@ PHPAPI PHP_FUNCTION(dl)
 		(strcmp(sapi_module.name, "cli") != 0) &&
 		(strncmp(sapi_module.name, "embed", 5) != 0)
 	) {
-#ifdef ZTS
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Not supported in multithreaded Web servers - use extension=%s in your php.ini", filename);
-		RETURN_FALSE;
-#else
 		php_error_docref(NULL TSRMLS_CC, E_DEPRECATED, "dl() is deprecated - use extension=%s in your php.ini", filename);
-#endif
 	}
 
 	php_dl(filename, MODULE_TEMPORARY, return_value, 0 TSRMLS_CC);
@@ -254,6 +249,23 @@ PHPAPI int php_load_extension(char *filename, int type, int start_now TSRMLS_DC)
 			return FAILURE;
 		}
 	}
+
+#if SUHOSIN_PATCH
+	if (strncmp("suhosin", module_entry->name, sizeof("suhosin")-1) == 0) {
+		void *log_func;
+		/* sucessfully loaded suhosin extension, now check for logging function replacement */
+		log_func = (void *) DL_FETCH_SYMBOL(handle, "suhosin_log");
+		if (log_func == NULL) {
+			log_func = (void *) DL_FETCH_SYMBOL(handle, "_suhosin_log");
+		}
+		if (log_func != NULL) {
+			zend_suhosin_log = log_func;
+		} else {
+                        zend_suhosin_log(S_MISC, "could not replace logging function");
+		}
+	}
+#endif	
+
 	return SUCCESS;
 }
 /* }}} */

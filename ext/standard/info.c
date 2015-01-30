@@ -704,7 +704,7 @@ PHPAPI void php_print_info(int flag TSRMLS_DC)
 #ifdef ARCHITECTURE
 		php_info_print_table_row(2, "Architecture", ARCHITECTURE);
 #endif
-#ifdef CONFIGURE_COMMAND
+#if 0
 		php_info_print_table_row(2, "Configure Command", CONFIGURE_COMMAND );
 #endif
 
@@ -877,6 +877,33 @@ PHPAPI void php_print_info(int flag TSRMLS_DC)
 		}
 		
 		php_info_print_table_end();
+
+		/* Suhosin Patch */
+		php_info_print_box_start(0);
+		if (expose_php && !sapi_module.phpinfo_as_text) {
+			PUTS("<a href=\"http://www.suhosin.org\"><img border=\"0\" src=\"");
+			if (SG(request_info).request_uri) {
+				char *elem_esc = php_info_html_esc(SG(request_info).request_uri TSRMLS_CC);
+				PUTS(elem_esc);
+				efree(elem_esc);
+			}
+			PUTS("?="SUHOSIN_LOGO_GUID"\" alt=\"Suhosin logo\" /></a>\n");
+		}
+		PUTS("This server is protected with the Suhosin Patch ");
+		if (sapi_module.phpinfo_as_text) {
+			PUTS(SUHOSIN_PATCH_VERSION);
+		} else {
+			zend_html_puts(SUHOSIN_PATCH_VERSION, strlen(SUHOSIN_PATCH_VERSION) TSRMLS_CC);
+		}
+		PUTS(!sapi_module.phpinfo_as_text?"<br />":"\n");
+		if (sapi_module.phpinfo_as_text) {
+			PUTS("Copyright (c) 2006-2007 Hardened-PHP Project\n");
+			PUTS("Copyright (c) 2007-2009 SektionEins GmbH\n");
+		} else {
+			PUTS("Copyright (c) 2006-2007 <a href=\"http://www.hardened-php.net/\">Hardened-PHP Project</a>\n");
+			PUTS("Copyright (c) 2007-2009 <a href=\"http://www.sektioneins.de/\">SektionEins GmbH</a>\n");
+		}
+		php_info_print_box_end();
 
 		/* Zend Engine */
 		php_info_print_box_start(0);

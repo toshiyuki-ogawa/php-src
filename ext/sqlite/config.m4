@@ -84,7 +84,7 @@ if test "$PHP_SQLITE" != "no"; then
     ])
     SQLITE_MODULE_TYPE=external
     PHP_SQLITE_CFLAGS=$pdo_inc_path
-    sqlite_extra_sources="libsqlite/src/encode.c"
+    sqlite_extra_sources=""
   else
     # use bundled library
     PHP_PROG_LEMON

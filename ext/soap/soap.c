@@ -1721,21 +1721,21 @@ PHP_METHOD(SoapServer, handle)
 				}
 				if (call_user_function(CG(function_table), (zval**)NULL, &func, &retval, 1, params TSRMLS_CC) == SUCCESS &&
 				    Z_TYPE(retval) == IS_STRING) {
-					doc_request = soap_xmlParseMemory(Z_STRVAL(retval),Z_STRLEN(retval));
+					doc_request = soap_xmlParseMemory(Z_STRVAL(retval),Z_STRLEN(retval) TSRMLS_CC);
 					zval_dtor(&retval);
 				} else {
 					php_error_docref(NULL TSRMLS_CC, E_WARNING,"Can't uncompress compressed request");
 					return;
 				}
 			} else {
-				doc_request = soap_xmlParseMemory(post_data, post_data_length);
+				doc_request = soap_xmlParseMemory(post_data, post_data_length TSRMLS_CC);
 			}
 		} else {
 			zval_ptr_dtor(&retval);
 			return;
 		}
 	} else {
-		doc_request = soap_xmlParseMemory(arg,arg_len);
+		doc_request = soap_xmlParseMemory(arg,arg_len TSRMLS_CC);
 	}
 
 	if (doc_request == NULL) {
