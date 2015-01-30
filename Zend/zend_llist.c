@@ -23,6 +23,194 @@
 #include "zend_llist.h"
 #include "zend_qsort.h"
 
+#if SUHOSIN_PATCH
+#ifdef ZTS
+static MUTEX_T zend_llist_dprot_mx_reader;
+static MUTEX_T zend_llist_dprot_mx_writer;
+static unsigned int zend_llist_dprot_reader;
+#endif
+static unsigned int zend_llist_dprot_counter;
+static unsigned int zend_llist_dprot_curmax;
+static llist_dtor_func_t *zend_llist_dprot_table = NULL;
+
+static void zend_llist_dprot_begin_read()
+{
+#ifdef ZTS
+	tsrm_mutex_lock(zend_llist_dprot_mx_reader);
+	if ((++(zend_llist_dprot_reader)) == 1) {
+		tsrm_mutex_lock(zend_llist_dprot_mx_writer);
+	}
+	tsrm_mutex_unlock(zend_llist_dprot_mx_reader);
+#endif
+}
+
+static void zend_llist_dprot_end_read()
+{
+#ifdef ZTS
+	tsrm_mutex_lock(zend_llist_dprot_mx_reader);
+	if ((--(zend_llist_dprot_reader)) == 0) {
+		tsrm_mutex_unlock(zend_llist_dprot_mx_writer);
+	}
+	tsrm_mutex_unlock(zend_llist_dprot_mx_reader);
+#endif
+}
+
+static void zend_llist_dprot_begin_write()
+{
+#ifdef ZTS
+	tsrm_mutex_lock(zend_llist_dprot_mx_writer);
+#endif
+}
+
+static void zend_llist_dprot_end_write()
+{
+#ifdef ZTS
+	tsrm_mutex_unlock(zend_llist_dprot_mx_writer);
+#endif
+}
+
+/*ZEND_API void zend_llist_dprot_dtor()
+{
+#ifdef ZTS
+	tsrm_mutex_free(zend_llist_dprot_mx_reader);
+	tsrm_mutex_free(zend_llist_dprot_mx_writer);
+#endif	
+	free(zend_llist_dprot_table);
+}*/
+
+static void zend_llist_add_destructor(llist_dtor_func_t pDestructor)
+{
+	int left, right, mid;
+	zend_bool found = 0;
+	unsigned long value;
+	
+	if (pDestructor == NULL || pDestructor == ZVAL_PTR_DTOR) {
+		return;
+	}
+	
+	if (zend_llist_dprot_table == NULL) {
+#ifdef ZTS
+		zend_llist_dprot_mx_reader = tsrm_mutex_alloc();
+		zend_llist_dprot_mx_writer = tsrm_mutex_alloc();
+		zend_llist_dprot_reader = 0;
+#endif	
+		zend_llist_dprot_counter = 0;
+		zend_llist_dprot_curmax = 256;
+		zend_llist_dprot_table = (llist_dtor_func_t *) malloc(256 * sizeof(llist_dtor_func_t));
+	}
+	
+	zend_llist_dprot_begin_write();
+
+	if (zend_llist_dprot_counter == 0) {
+		zend_llist_dprot_counter++;
+		zend_llist_dprot_table[0] = pDestructor;
+	} else {
+		value = (unsigned long) pDestructor;
+		left = 0;
+		right = zend_llist_dprot_counter-1;
+		mid = 0;
+		
+		while (left < right) {
+			mid = (right - left) >> 1;
+			mid += left;
+			if ((unsigned long)zend_llist_dprot_table[mid] == value) {
+				found = 1;
+				break;
+			}
+			if (value < (unsigned long)zend_llist_dprot_table[mid]) {
+				right = mid-1;
+			} else {
+				left = mid+1;
+			}
+		}
+		if ((unsigned long)zend_llist_dprot_table[left] == value) {
+			found = 1;
+		}
+		
+		if (!found) {
+		
+			if (zend_llist_dprot_counter >= zend_llist_dprot_curmax) {
+				zend_llist_dprot_curmax += 256;
+				zend_llist_dprot_table = (llist_dtor_func_t *) realloc(zend_llist_dprot_table, zend_llist_dprot_curmax * sizeof(llist_dtor_func_t));
+			}
+			
+			if ((unsigned long)zend_llist_dprot_table[left] < value) {
+				memmove(zend_llist_dprot_table+left+2, zend_llist_dprot_table+left+1, (zend_llist_dprot_counter-left-1)*sizeof(llist_dtor_func_t));
+				zend_llist_dprot_table[left+1] = pDestructor;
+			} else {
+				memmove(zend_llist_dprot_table+left+1, zend_llist_dprot_table+left, (zend_llist_dprot_counter-left)*sizeof(llist_dtor_func_t));
+				zend_llist_dprot_table[left] = pDestructor;
+			}
+
+			zend_llist_dprot_counter++;
+		}
+	}
+	
+	zend_llist_dprot_end_write();
+}
+
+static void zend_llist_check_destructor(llist_dtor_func_t pDestructor)
+{
+	unsigned long value;
+	
+	if (pDestructor == NULL || pDestructor == ZVAL_PTR_DTOR) {
+		return;
+	}
+
+	zend_llist_dprot_begin_read();
+	
+	if (zend_llist_dprot_counter > 0) {
+		int left, right, mid;
+		zend_bool found = 0;
+	
+		value = (unsigned long) pDestructor;
+		left = 0;
+		right = zend_llist_dprot_counter-1;
+		
+		while (left < right) {
+			mid = (right - left) >> 1;
+			mid += left;
+			if ((unsigned long)zend_llist_dprot_table[mid] == value) {
+				found = 1;
+				break;
+			}
+			if (value < (unsigned long)zend_llist_dprot_table[mid]) {
+				right = mid-1;
+			} else {
+				left = mid+1;
+			}
+		}
+		if ((unsigned long)zend_llist_dprot_table[left] == value) {
+			found = 1;
+		}
+		
+		if (!found) {
+			zend_llist_dprot_end_read();
+		
+		        zend_suhosin_log(S_MEMORY, "possible memory corruption detected - unknown llist destructor");
+			if (SUHOSIN_CONFIG(SUHOSIN_LL_IGNORE_INVALID_DESTRUCTOR) == 0) {
+			        _exit(1);
+		        }
+			return;
+		}
+	
+	} else {
+		zend_llist_dprot_end_read();
+	
+	        zend_suhosin_log(S_MEMORY, "possible memory corruption detected - unknown llist destructor");
+		if (SUHOSIN_CONFIG(SUHOSIN_LL_IGNORE_INVALID_DESTRUCTOR) == 0) {
+		        _exit(1);
+	        }
+		return;	        
+	}
+	
+	zend_llist_dprot_end_read();
+}
+#else
+#define zend_llist_add_destructor(pDestructor) do {} while(0)
+#define zend_llist_check_destructor(pDestructor) do {} while(0)
+#endif
+
 ZEND_API void zend_llist_init(zend_llist *l, size_t size, llist_dtor_func_t dtor, unsigned char persistent)
 {
 	l->head  = NULL;
@@ -30,6 +218,7 @@ ZEND_API void zend_llist_init(zend_llist *l, size_t size, llist_dtor_func_t dtor
 	l->count = 0;
 	l->size  = size;
 	l->dtor  = dtor;
+	zend_llist_add_destructor(dtor);
 	l->persistent = persistent;
 }
 
@@ -81,6 +270,7 @@ ZEND_API void zend_llist_prepend_element(zend_llist *l, void *element)
 			} else {\
 				(l)->tail = (current)->prev;\
 			}\
+			zend_llist_check_destructor((l)->dtor); \
 			if ((l)->dtor) {\
 				(l)->dtor((current)->data);\
 			}\
@@ -108,6 +298,7 @@ ZEND_API void zend_llist_destroy(zend_llist *l)
 {
 	zend_llist_element *current=l->head, *next;
 	
+	zend_llist_check_destructor(l->dtor);
 	while (current) {
 		next = current->next;
 		if (l->dtor) {
@@ -133,6 +324,7 @@ ZEND_API void *zend_llist_remove_tail(zend_llist *l)
 	zend_llist_element *old_tail;
 	void *data;
 
+	zend_llist_check_destructor((l)->dtor);
 	if ((old_tail = l->tail)) {
 		if (old_tail->prev) {
 			old_tail->prev->next = NULL;

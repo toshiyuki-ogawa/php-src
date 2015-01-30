@@ -73,6 +73,11 @@ static void zend_destroy_property_info_internal(zend_property_info *property_inf
 }
 /* }}} */
 
+#if SUHOSIN_PATCH
+void *suhosin_zend_destroy_property_info_internal = zend_destroy_property_info_internal;
+void *suhosin_zend_destroy_property_info = zend_destroy_property_info;
+#endif
+
 static void build_runtime_defined_function_key(zval *result, const char *name, int name_length TSRMLS_DC) /* {{{ */
 {
 	char char_pos_buf[32];

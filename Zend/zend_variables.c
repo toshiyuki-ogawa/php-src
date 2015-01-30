@@ -34,6 +34,9 @@ ZEND_API void _zval_dtor_func(zval *zvalue ZEND_FILE_LINE_DC)
 		case IS_CONSTANT:
 			CHECK_ZVAL_STRING_REL(zvalue);
 			STR_FREE_REL(zvalue->value.str.val);
+#if SUHOSIN_PATCH
+                        zvalue->value.str.len = 0;
+#endif
 			break;
 		case IS_ARRAY:
 		case IS_CONSTANT_ARRAY: {
@@ -80,6 +83,9 @@ ZEND_API void _zval_internal_dtor(zval *zvalue ZEND_FILE_LINE_DC)
 		case IS_CONSTANT:
 			CHECK_ZVAL_STRING_REL(zvalue);
 			free(zvalue->value.str.val);
+#if SUHOSIN_PATCH
+                        zvalue->value.str.len = 0;
+#endif
 			break;
 		case IS_ARRAY:
 		case IS_CONSTANT_ARRAY:

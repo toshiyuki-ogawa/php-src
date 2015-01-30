@@ -203,6 +203,8 @@ END_EXTERN_C()
 
 /* Heap functions */
 typedef struct _zend_mm_heap zend_mm_heap;
+typedef struct _zend_mm_heap_canary zend_mm_heap_canary;
+
 
 ZEND_API zend_mm_heap *zend_mm_startup(void);
 ZEND_API void zend_mm_shutdown(zend_mm_heap *heap, int full_shutdown, int silent TSRMLS_DC);

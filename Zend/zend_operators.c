@@ -153,9 +153,14 @@ ZEND_API void convert_scalar_to_number(zval *op TSRMLS_DC) /* {{{ */
 		case IS_STRING:
 			{
 				char *strval;
+                                int strl;
 
 				strval = Z_STRVAL_P(op);
-				if ((Z_TYPE_P(op)=is_numeric_string(strval, Z_STRLEN_P(op), &Z_LVAL_P(op), &Z_DVAL_P(op), 1)) == 0) {
+                                strl   = Z_STRLEN_P(op);
+#if SUHOSIN_PATCH
+                                Z_STRLEN_P(op) = 0;
+#endif
+				if ((Z_TYPE_P(op)=is_numeric_string(strval, strl, &Z_LVAL_P(op), &Z_DVAL_P(op), 1)) == 0) {
 					ZVAL_LONG(op, 0);
 				}
 				STR_FREE(strval);
@@ -187,7 +192,8 @@ ZEND_API void convert_scalar_to_number(zval *op TSRMLS_DC) /* {{{ */
 	} else {														\
 		switch (Z_TYPE_P(op)) {										\
 			case IS_STRING:											\
-				{													\
+				{ \
+                                        Z_STRLEN(holder) = 0;													\
 					if ((Z_TYPE(holder)=is_numeric_string(Z_STRVAL_P(op), Z_STRLEN_P(op), &Z_LVAL(holder), &Z_DVAL(holder), 1)) == 0) {	\
 						ZVAL_LONG(&(holder), 0);							\
 					}														\
@@ -229,6 +235,7 @@ ZEND_API void convert_scalar_to_number(zval *op TSRMLS_DC) /* {{{ */
 				Z_LVAL(holder) = zend_dval_to_lval(Z_DVAL_P(op));	\
 				break;												\
 			case IS_STRING:											\
+                                Z_STRLEN(holder) = 0; \
 				Z_LVAL(holder) = strtol(Z_STRVAL_P(op), NULL, 10);	\
 				break;												\
 			case IS_ARRAY:											\
@@ -271,6 +278,7 @@ ZEND_API void convert_scalar_to_number(zval *op TSRMLS_DC) /* {{{ */
 				Z_LVAL(holder) = (Z_DVAL_P(op) ? 1 : 0);			\
 				break;												\
 			case IS_STRING:											\
+                                Z_STRLEN(holder) = 0; \
 				if (Z_STRLEN_P(op) == 0								\
 					|| (Z_STRLEN_P(op)==1 && Z_STRVAL_P(op)[0]=='0')) {	\
 					Z_LVAL(holder) = 0;								\
@@ -356,6 +364,9 @@ ZEND_API void convert_to_long_base(zval *op, int base) /* {{{ */
 			{
 				char *strval = Z_STRVAL_P(op);
 
+#if SUHOSIN_PATCH
+                                Z_STRLEN_P(op) = 0;
+#endif
 				Z_LVAL_P(op) = strtol(strval, NULL, base);
 				STR_FREE(strval);
 			}
@@ -416,6 +427,9 @@ ZEND_API void convert_to_double(zval *op) /* {{{ */
 			{
 				char *strval = Z_STRVAL_P(op);
 
+#if SUHOSIN_PATCH
+                                Z_STRLEN_P(op) = 0;
+#endif
 				Z_DVAL_P(op) = zend_strtod(strval, NULL);
 				STR_FREE(strval);
 			}
@@ -502,8 +516,14 @@ ZEND_API void convert_to_boolean(zval *op) /* {{{ */
 
 				if (Z_STRLEN_P(op) == 0
 					|| (Z_STRLEN_P(op)==1 && Z_STRVAL_P(op)[0]=='0')) {
+#if SUHOSIN_PATCH
+                                        Z_STRLEN_P(op) = 0;
+#endif
 					Z_LVAL_P(op) = 0;
 				} else {
+#if SUHOSIN_PATCH
+                                        Z_STRLEN_P(op) = 0;
+#endif
 					Z_LVAL_P(op) = 1;
 				}
 				STR_FREE(strval);
@@ -617,6 +637,9 @@ static void convert_scalar_to_array(zval *op, int type TSRMLS_DC) /* {{{ */
 	*entry = *op;
 	INIT_PZVAL(entry);
 
+#if SUHOSIN_PATCH
+        Z_STRLEN_P(op) = 0;
+#endif
 	switch (type) {
 		case IS_ARRAY:
 			ALLOC_HASHTABLE(Z_ARRVAL_P(op));

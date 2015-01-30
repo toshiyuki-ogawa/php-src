@@ -277,6 +277,14 @@ SOURCE=.\zend_strtod.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\zend_canary.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\zend_alloc_canary.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\zend_ts_hash.c
 # End Source File
 # Begin Source File

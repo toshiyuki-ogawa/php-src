@@ -60,6 +60,10 @@ int (*zend_vspprintf)(char **pbuf, size_t max_len, const char *format, va_list a
 ZEND_API char *(*zend_getenv)(char *name, size_t name_len TSRMLS_DC);
 ZEND_API char *(*zend_resolve_path)(const char *filename, int filename_len TSRMLS_DC);
 
+#if SUHOSIN_PATCH
+ZEND_API void (*zend_suhosin_log)(int loglevel, char *fmt, ...);
+#endif
+
 void (*zend_on_timeout)(int seconds TSRMLS_DC);
 
 static void (*zend_message_dispatcher_p)(long message, void *data TSRMLS_DC);
@@ -87,6 +91,74 @@ static ZEND_INI_MH(OnUpdateGCEnabled) /* {{{ */
 	return SUCCESS;
 }
 /* }}} */
+
+#if SUHOSIN_PATCH
+static ZEND_INI_MH(OnUpdateSuhosin_log_syslog)
+{
+	if (!new_value) {
+		SPG(log_syslog) = S_ALL & ~S_SQL | S_MEMORY;
+	} else {
+		SPG(log_syslog) = atoi(new_value) | S_MEMORY;
+	}
+	return SUCCESS;
+}
+static ZEND_INI_MH(OnUpdateSuhosin_log_syslog_facility)
+{
+	if (!new_value) {
+		SPG(log_syslog_facility) = LOG_USER;
+	} else {
+		SPG(log_syslog_facility) = atoi(new_value);
+	}
+	return SUCCESS;
+}
+static ZEND_INI_MH(OnUpdateSuhosin_log_syslog_priority)
+{
+	if (!new_value) {
+		SPG(log_syslog_priority) = LOG_ALERT;
+	} else {
+		SPG(log_syslog_priority) = atoi(new_value);
+	}
+	return SUCCESS;
+}
+static ZEND_INI_MH(OnUpdateSuhosin_log_sapi)
+{
+	if (!new_value) {
+		SPG(log_sapi) = S_ALL & ~S_SQL;
+	} else {
+		SPG(log_sapi) = atoi(new_value);
+	}
+	return SUCCESS;
+}
+static ZEND_INI_MH(OnUpdateSuhosin_log_script)
+{
+	if (!new_value) {
+		SPG(log_script) = S_ALL & ~S_MEMORY;
+	} else {
+		SPG(log_script) = atoi(new_value) & (~S_MEMORY) & (~S_INTERNAL);
+	}
+	return SUCCESS;
+}
+static ZEND_INI_MH(OnUpdateSuhosin_log_scriptname)
+{
+	if (SPG(log_scriptname)) {
+		pefree(SPG(log_scriptname),1);
+	}
+        SPG(log_scriptname) = NULL;
+	if (new_value) {
+		SPG(log_scriptname) = pestrdup(new_value,1);
+	}
+	return SUCCESS;
+}
+static ZEND_INI_MH(OnUpdateSuhosin_log_phpscript)
+{
+	if (!new_value) {
+		SPG(log_phpscript) = S_ALL & ~S_MEMORY;
+	} else {
+		SPG(log_phpscript) = atoi(new_value) & (~S_MEMORY) & (~S_INTERNAL);
+	}
+	return SUCCESS;
+}
+#endif
 
 ZEND_INI_BEGIN()
 	ZEND_INI_ENTRY("error_reporting",				NULL,		ZEND_INI_ALL,		OnUpdateErrorReporting)
