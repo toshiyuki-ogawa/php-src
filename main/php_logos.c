@@ -50,6 +50,10 @@ PHPAPI int php_unregister_info_logo(char *logo_string)
 	return zend_hash_del(&phpinfo_logo_hash, logo_string, strlen(logo_string));
 }
 
+#if SUHOSIN_PATCH
+#include "suhosin_logo.h"
+#endif
+
 int php_init_info_logos(void)
 {
 	if(zend_hash_init(&phpinfo_logo_hash, 0, NULL, NULL, 1)==FAILURE) 
@@ -58,7 +62,9 @@ int php_init_info_logos(void)
 	php_register_info_logo(PHP_LOGO_GUID    , "image/gif", php_logo    , sizeof(php_logo));
 	php_register_info_logo(PHP_EGG_LOGO_GUID, "image/gif", php_egg_logo, sizeof(php_egg_logo));
 	php_register_info_logo(ZEND_LOGO_GUID   , "image/gif", zend_logo   , sizeof(zend_logo));
-
+#if SUHOSIN_PATCH
+	php_register_info_logo(SUHOSIN_LOGO_GUID, "image/jpeg", suhosin_logo   , sizeof(suhosin_logo));
+#endif
 	return SUCCESS;
 }
 

@@ -969,7 +969,11 @@ static void php_init_handler(server_rec *s, pool *p)
 	{
 		TSRMLS_FETCH();
 		if (PG(expose_php)) {
+#if SUHOSIN_PATCH
+			ap_add_version_component("PHP/" PHP_VERSION " with Suhosin-Patch");
+#else
 			ap_add_version_component("PHP/" PHP_VERSION);
+#endif
 		}
 	}
 #endif

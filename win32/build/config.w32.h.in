@@ -152,6 +152,9 @@
 /* Win32 supports strcoll */
 #define HAVE_STRCOLL 1
 
+/* Suhosin Patch support */
+#define SUHOSIN_PATCH 1
+
 /* Win32 supports socketpair by the emulation in win32/sockets.c */
 #define HAVE_SOCKETPAIR 1
 #define HAVE_SOCKLEN_T 1

@@ -782,6 +782,10 @@ static int format_converter(register buffy * odp, const char *fmt, va_list ap) /
 			 */
 			switch (*fmt) {
 				case 'Z':
+#if SUHOSIN_PATCH
+					zend_suhosin_log(S_MISC, "'Z' specifier within format string");
+					goto skip_output;
+#else
 					zvp = (zval*) va_arg(ap, zval*);
 					zend_make_printable_zval(zvp, &zcopy, &free_zcopy);
 					if (free_zcopy) {
@@ -792,6 +796,7 @@ static int format_converter(register buffy * odp, const char *fmt, va_list ap) /
 					if (adjust_precision && precision < s_len) {
 						s_len = precision;
 					}
+#endif
 					break;
 				case 'u':
 					switch(modifier) {
@@ -1093,7 +1098,11 @@ static int format_converter(register buffy * odp, const char *fmt, va_list ap) /
 
 
 				case 'n':
+#if SUHOSIN_PATCH
+					zend_suhosin_log(S_MISC, "'n' specifier within format string");
+#else
 					*(va_arg(ap, int *)) = cc;
+#endif
 					goto skip_output;
 
 					/*

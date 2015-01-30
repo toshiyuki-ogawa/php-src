@@ -91,6 +91,9 @@
 
 #include "SAPI.h"
 #include "rfc1867.h"
+#if SUHOSIN_PATCH
+#include "suhosin_globals.h"
+#endif
 
 #if HAVE_MMAP || defined(PHP_WIN32)
 # if HAVE_UNISTD_H
@@ -504,7 +507,7 @@ PHP_INI_BEGIN()
 	STD_PHP_INI_ENTRY("extension_dir",			PHP_EXTENSION_DIR,		PHP_INI_SYSTEM,		OnUpdateStringUnempty,	extension_dir,			php_core_globals,	core_globals)
 	STD_PHP_INI_ENTRY("include_path",			PHP_INCLUDE_PATH,		PHP_INI_ALL,		OnUpdateStringUnempty,	include_path,			php_core_globals,	core_globals)
 	PHP_INI_ENTRY("max_execution_time",			"30",		PHP_INI_ALL,			OnUpdateTimeout)
-	STD_PHP_INI_ENTRY("open_basedir",			NULL,		PHP_INI_ALL,		OnUpdateBaseDir,			open_basedir,			php_core_globals,	core_globals)
+	PHP_INI_ENTRY("open_basedir",			NULL,		PHP_INI_ALL,		OnUpdateBaseDir)
 	STD_PHP_INI_ENTRY("safe_mode_exec_dir",		PHP_SAFE_MODE_EXEC_DIR,	PHP_INI_SYSTEM,		OnUpdateString,			safe_mode_exec_dir,		php_core_globals,	core_globals)
 
 	STD_PHP_INI_BOOLEAN("file_uploads",			"1",		PHP_INI_SYSTEM,		OnUpdateBool,			file_uploads,			php_core_globals,	core_globals)
@@ -1818,6 +1821,10 @@ void dummy_invalid_parameter_handler(
 }
 #endif
 
+#if SUHOSIN_PATCH
+PHPAPI void suhosin_startup();
+#endif
+
 /* {{{ php_module_startup
  */
 int php_module_startup(sapi_module_struct *sf, zend_module_entry *additional_modules, uint num_additional_modules)
@@ -1864,6 +1871,10 @@ int php_module_startup(sapi_module_struct *sf, zend_module_entry *additional_mod
 
 #ifdef PHP_WIN32
 	php_win32_init_rng_lock();
+#endif
+
+#if SUHOSIN_PATCH
+        suhosin_startup();
 #endif
 
 	module_shutdown = 0;
@@ -1988,7 +1999,11 @@ int php_module_startup(sapi_module_struct *sf, zend_module_entry *additional_mod
 	REGISTER_MAIN_STRINGL_CONSTANT("PHP_CONFIG_FILE_SCAN_DIR", PHP_CONFIG_FILE_SCAN_DIR, sizeof(PHP_CONFIG_FILE_SCAN_DIR)-1, CONST_PERSISTENT | CONST_CS);
 	REGISTER_MAIN_STRINGL_CONSTANT("PHP_SHLIB_SUFFIX", PHP_SHLIB_SUFFIX, sizeof(PHP_SHLIB_SUFFIX)-1, CONST_PERSISTENT | CONST_CS);
 	REGISTER_MAIN_STRINGL_CONSTANT("PHP_EOL", PHP_EOL, sizeof(PHP_EOL)-1, CONST_PERSISTENT | CONST_CS);
-	REGISTER_MAIN_LONG_CONSTANT("PHP_MAXPATHLEN", MAXPATHLEN, CONST_PERSISTENT | CONST_CS);
+#if SUHOSIN_PATCH
+        REGISTER_MAIN_LONG_CONSTANT("SUHOSIN_PATCH", 1, CONST_PERSISTENT | CONST_CS);
+        REGISTER_MAIN_STRINGL_CONSTANT("SUHOSIN_PATCH_VERSION", SUHOSIN_PATCH_VERSION, sizeof(SUHOSIN_PATCH_VERSION)-1, CONST_PERSISTENT | CONST_CS);
+#endif	
+        REGISTER_MAIN_LONG_CONSTANT("PHP_MAXPATHLEN", MAXPATHLEN, CONST_PERSISTENT | CONST_CS);
 	REGISTER_MAIN_LONG_CONSTANT("PHP_INT_MAX", LONG_MAX, CONST_PERSISTENT | CONST_CS);
 	REGISTER_MAIN_LONG_CONSTANT("PHP_INT_SIZE", sizeof(long), CONST_PERSISTENT | CONST_CS);
 #ifdef ZEND_MULTIBYTE

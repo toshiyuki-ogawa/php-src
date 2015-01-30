@@ -820,11 +820,13 @@ PHP_FUNCTION(ob_clean)
 
 	if (!OG(ob_nesting_level)) {
 		php_error_docref("ref.outcontrol" TSRMLS_CC, E_NOTICE, "failed to delete buffer. No buffer to delete");
+		zval_dtor(return_value);
 		RETURN_FALSE;
 	}
 
 	if (!OG(active_ob_buffer).status && !OG(active_ob_buffer).erase) {
 		php_error_docref("ref.outcontrol" TSRMLS_CC, E_NOTICE, "failed to delete buffer %s", OG(active_ob_buffer).handler_name);
+		zval_dtor(return_value);
 		RETURN_FALSE;
 	}
 
@@ -843,11 +845,13 @@ PHP_FUNCTION(ob_end_flush)
 
 	if (!OG(ob_nesting_level)) {
 		php_error_docref("ref.outcontrol" TSRMLS_CC, E_NOTICE, "failed to delete and flush buffer. No buffer to delete or flush");
+		zval_dtor(return_value);
 		RETURN_FALSE;
 	}
 
 	if (OG(ob_nesting_level) && !OG(active_ob_buffer).status && !OG(active_ob_buffer).erase) {
 		php_error_docref("ref.outcontrol" TSRMLS_CC, E_NOTICE, "failed to delete buffer %s", OG(active_ob_buffer).handler_name);
+		zval_dtor(return_value);
 		RETURN_FALSE;
 	}
 

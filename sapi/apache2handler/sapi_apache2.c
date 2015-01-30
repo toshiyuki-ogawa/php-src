@@ -407,7 +407,11 @@ static void php_apache_add_version(apr_pool_t *p)
 {
 	TSRMLS_FETCH();
 	if (PG(expose_php)) {
+#if SUHOSIN_PATCH
+		ap_add_version_component(p, "PHP/" PHP_VERSION " with Suhosin-Patch");
+#else
 		ap_add_version_component(p, "PHP/" PHP_VERSION);
+#endif
 	}
 }
 
@@ -467,6 +471,19 @@ static apr_status_t php_server_context_cleanup(void *data_)
 	void **data = data_;
 	*data = NULL;
 	return APR_SUCCESS;
+}
+
+static int saved_umask;
+
+static void php_save_umask(void)
+{
+	saved_umask = umask(077);
+	umask(saved_umask);
+}
+
+static void php_restore_umask(void)
+{
+	umask(saved_umask);
 }
 
 static int php_apache_request_ctor(request_rec *r, php_struct *ctx TSRMLS_DC)
@@ -660,6 +677,8 @@ zend_first_try {
 	} else {
 		zend_file_handle zfd;
 
+		php_save_umask();
+
 		zfd.type = ZEND_HANDLE_FILENAME;
 		zfd.filename = (char *) r->filename;
 		zfd.free_filename = 0;
@@ -670,6 +689,9 @@ zend_first_try {
 		} else {
 			zend_execute_scripts(ZEND_INCLUDE TSRMLS_CC, NULL, 1, &zfd);
 		}
+
+		php_restore_umask();
+
 
 		apr_table_set(r->notes, "mod_php_memory_usage",
 			apr_psprintf(ctx->r->pool, "%u", zend_memory_peak_usage(1 TSRMLS_CC)));

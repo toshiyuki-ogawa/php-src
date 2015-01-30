@@ -1,6 +1,6 @@
 dnl This file becomes configure.in for self-contained extensions.
 
-divert(1)
+dnl divert(1)
 
 AC_PREREQ(2.13)
 AC_INIT(config.m4)

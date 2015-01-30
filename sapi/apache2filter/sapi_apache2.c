@@ -583,7 +583,11 @@ static void php_apache_add_version(apr_pool_t *p)
 {
 	TSRMLS_FETCH();
 	if (PG(expose_php)) {
+#if SUHOSIN_PATCH
+		ap_add_version_component(p, "PHP/" PHP_VERSION " with Suhosin-Patch");
+#else
 		ap_add_version_component(p, "PHP/" PHP_VERSION);
+#endif
 	}
 }
 
