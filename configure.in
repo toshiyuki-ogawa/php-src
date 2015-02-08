@@ -1,7 +1,7 @@
 ## $Id$ -*- autoconf -*-
 dnl ## Process this file with autoconf to produce a configure script.
 
-divert(1)
+dnl divert(1)
 
 dnl ## Diversion 1 is the autoconf + automake setup phase. We also
 dnl ## set the PHP version, deal with platform-specific compile
@@ -42,7 +42,7 @@ AC_CONFIG_HEADER(main/php_config.h)
 PHP_MAJOR_VERSION=5
 PHP_MINOR_VERSION=3
 PHP_RELEASE_VERSION=29
-PHP_EXTRA_VERSION=""
+PHP_EXTRA_VERSION="-1ubuntu3.16"
 PHP_VERSION="$PHP_MAJOR_VERSION.$PHP_MINOR_VERSION.$PHP_RELEASE_VERSION$PHP_EXTRA_VERSION"
 PHP_VERSION_ID=`expr [$]PHP_MAJOR_VERSION \* 10000 + [$]PHP_MINOR_VERSION \* 100 + [$]PHP_RELEASE_VERSION`
 
@@ -57,6 +57,8 @@ AC_DEFUN([PHP_EXT_BUILDDIR],[ext/$1])dnl
 AC_DEFUN([PHP_EXT_DIR],[ext/$1])dnl
 AC_DEFUN([PHP_EXT_SRCDIR],[$abs_srcdir/ext/$1])dnl
 AC_DEFUN([PHP_ALWAYS_SHARED],[])dnl
+
+AC_DEFINE([_GNU_SOURCE], 1, [Define to enable GNU C Library extensions])
 
 dnl Setting up the PHP version based on the information above.
 dnl -------------------------------------------------------------------------
@@ -289,8 +291,9 @@ sinclude(Zend/Zend.m4)
 sinclude(TSRM/threads.m4)
 sinclude(TSRM/tsrm.m4)
 
+sinclude(main/suhosin_patch.m4)
 
-divert(2)
+dnl divert(2)
 
 dnl ## Diversion 2 is where we set PHP-specific options and come up
 dnl ## with reasonable default values for them. We check for pthreads here
@@ -329,7 +332,7 @@ if test "$enable_maintainer_zts" = "yes"; then
   PTHREADS_FLAGS
 fi
 
-divert(3)
+dnl divert(3)
 
 dnl ## In diversion 3 we check for compile-time options to the PHP
 dnl ## core and how to deal with different system dependencies. 
@@ -616,50 +619,50 @@ PHP_CHECK_FUNC_LIB(nanosleep, rt)
 
 dnl Check for getaddrinfo, should be a better way, but...
 dnl Also check for working getaddrinfo
-AC_CACHE_CHECK([for getaddrinfo], ac_cv_func_getaddrinfo,
-[AC_TRY_LINK([#include <netdb.h>],
-                [struct addrinfo *g,h;g=&h;getaddrinfo("","",g,&g);], 
-  AC_TRY_RUN([
-#include <netdb.h>
-#include <sys/types.h>
-#ifndef AF_INET
-# include <sys/socket.h>
-#endif
-int main(void) {
-  struct addrinfo *ai, *pai, hints;
-
-  memset(&hints, 0, sizeof(hints));
-  hints.ai_flags = AI_NUMERICHOST;
-
-  if (getaddrinfo("127.0.0.1", 0, &hints, &ai) < 0) {
-    exit(1);
-  }
-
-  if (ai == 0) {
-    exit(1);
-  }
-
-  pai = ai;
-  
-  while (pai) {
-    if (pai->ai_family != AF_INET) {
-      /* 127.0.0.1/NUMERICHOST should only resolve ONE way */
-      exit(1);
-    }
-    if (pai->ai_addr->sa_family != AF_INET) {
-      /* 127.0.0.1/NUMERICHOST should only resolve ONE way */
-      exit(1);
-    }
-    pai = pai->ai_next;
-  }
-  freeaddrinfo(ai);
-  exit(0);
-}
-  ],ac_cv_func_getaddrinfo=yes, ac_cv_func_getaddrinfo=no, ac_cv_func_getaddrinfo=no),
-ac_cv_func_getaddrinfo=no)])
-if test "$ac_cv_func_getaddrinfo" = yes; then
+dnl AC_CACHE_CHECK([for getaddrinfo], ac_cv_func_getaddrinfo,
+dnl [AC_TRY_LINK([#include <netdb.h>],
+dnl                 [struct addrinfo *g,h;g=&h;getaddrinfo("","",g,&g);], 
+dnl   AC_TRY_RUN([
+dnl #include <netdb.h>
+dnl #include <sys/types.h>
+dnl #ifndef AF_INET
+dnl # include <sys/socket.h>
+dnl #endif
+dnl int main(void) {
+dnl   struct addrinfo *ai, *pai, hints;
+dnl 
+dnl   memset(&hints, 0, sizeof(hints));
+dnl   hints.ai_flags = AI_NUMERICHOST;
+dnl 
+dnl   if (getaddrinfo("127.0.0.1", 0, &hints, &ai) < 0) {
+dnl     exit(1);
+dnl   }
+dnl 
+dnl   if (ai == 0) {
+dnl     exit(1);
+dnl   }
+dnl 
+dnl   pai = ai;
+dnl   
+dnl   while (pai) {
+dnl     if (pai->ai_family != AF_INET) {
+dnl       /* 127.0.0.1/NUMERICHOST should only resolve ONE way */
+dnl       exit(1);
+dnl     }
+dnl     if (pai->ai_addr->sa_family != AF_INET) {
+dnl       /* 127.0.0.1/NUMERICHOST should only resolve ONE way */
+dnl       exit(1);
+dnl     }
+dnl     pai = pai->ai_next;
+dnl   }
+dnl   freeaddrinfo(ai);
+dnl   exit(0);
+dnl }
+dnl   ],ac_cv_func_getaddrinfo=yes, ac_cv_func_getaddrinfo=no, ac_cv_func_getaddrinfo=no),
+dnl ac_cv_func_getaddrinfo=no)])
+dnl if test "$ac_cv_func_getaddrinfo" = yes; then
   AC_DEFINE(HAVE_GETADDRINFO,1,[Define if you have the getaddrinfo function])
-fi
+dnl fi
 
 dnl Check for the __sync_fetch_and_add builtin
 AC_CACHE_CHECK([for __sync_fetch_and_add], ac_cv_func_sync_fetch_and_add,
@@ -678,12 +681,7 @@ PHP_TIME_R_TYPE
 PHP_READDIR_R_TYPE
 PHP_CHECK_IN_ADDR_T
 
-AC_CHECK_FUNCS(crypt_r, [ php_crypt_r="1" ], [ php_crypt_r="0" ])
-if test "x$php_crypt_r" = "x1"; then
-  PHP_CRYPT_R_STYLE
-fi
-
-divert(4)
+dnl divert(4)
 
 dnl ## In diversion 4 we check user-configurable general settings.
 
@@ -924,7 +922,7 @@ else
   AC_MSG_RESULT([using system default])
 fi
 
-divert(5)
+dnl divert(5)
 
 dnl ## In diversion 5 we check which extensions should be compiled.
 dnl ## All of these are normally in the extension directories.
@@ -1013,7 +1011,7 @@ if test "$PHP_CLI" = "no"; then
 fi
 
 PHP_ARG_WITH(pear, [whether to install PEAR],
-[  --with-pear=DIR         Install PEAR in DIR [PREFIX/lib/php]
+[  --with-pear=DIR         Install PEAR in DIR [PREFIX/lib/php5]
   --without-pear          Do not install PEAR], DEFAULT, yes)
 
 if test "$PHP_PEAR" != "no"; then
@@ -1043,7 +1041,7 @@ dnl
   if test "$PHP_PEAR" = "DEFAULT" || test "$PHP_PEAR" = "yes"; then
     case $PHP_LAYOUT in
       GNU) PEAR_INSTALLDIR=$datadir/pear;;
-      *)   PEAR_INSTALLDIR=$libdir/php;;
+      *)   PEAR_INSTALLDIR=$libdir/php5;;
     esac
   fi
 
@@ -1098,12 +1096,12 @@ test "$program_suffix" = "NONE" && program_suffix=
 
 case $libdir in
   '${exec_prefix}/lib')
-    libdir=$libdir/php
+    libdir=$libdir/php5
     ;;
 esac
 case $datadir in
   '${prefix}/share')
-    datadir=$datadir/php
+    datadir=$datadir/php5
     ;;
 esac
 
@@ -1122,8 +1120,13 @@ dnl Build extension directory path
 
 ZEND_MODULE_API_NO=`$EGREP '#define ZEND_MODULE_API_NO ' $srcdir/Zend/zend_modules.h|$SED 's/#define ZEND_MODULE_API_NO //'`
 
+DEBIAN_PHP_API=`egrep -h '^#define ZEND_EXTENSION_API_NO|^#define ZEND_MODULE_API_NO|#define PHP_API_VERSION' $srcdir/Zend/zend_extensions.h $srcdir/Zend/zend_modules.h $srcdir/main/php.h | awk '{print $3}' | sed -e 's/^2200/200/' | sort -n | tail -n 1`
+if echo "$CPPFLAGS $CFLAGS" | grep -q -- -D_FILE_OFFSET_BITS=64; then
+  DEBIAN_PHP_API="${DEBIAN_PHP_API}+lfs"
+fi
+
 if test -z "$EXTENSION_DIR"; then
-  extbasedir=$ZEND_MODULE_API_NO
+  extbasedir=$DEBIAN_PHP_API
   if test "$oldstyleextdir" = "yes"; then
     if test "$PHP_DEBUG" = "1"; then
       part1=debug
@@ -1170,7 +1173,7 @@ EXPANDED_SYSCONFDIR=`eval echo $sysconfdir`
 EXPANDED_DATADIR=$datadir
 EXPANDED_PHP_CONFIG_FILE_PATH=`eval echo "$PHP_CONFIG_FILE_PATH"`
 EXPANDED_PHP_CONFIG_FILE_SCAN_DIR=`eval echo "$PHP_CONFIG_FILE_SCAN_DIR"`
-INCLUDE_PATH=.:$EXPANDED_PEAR_INSTALLDIR
+INCLUDE_PATH=.:$EXPANDED_PEAR_INSTALLDIR:/usr/share/pear
 
 exec_prefix=$old_exec_prefix
 libdir=$old_libdir
@@ -1275,6 +1278,7 @@ PHP_SUBST(CXX)
 PHP_SUBST(CXXFLAGS)
 PHP_SUBST(CXXFLAGS_CLEAN)
 PHP_SUBST_OLD(DEBUG_CFLAGS)
+PHP_SUBST_OLD(DEBIAN_PHP_API)
 PHP_SUBST_OLD(EXTENSION_DIR)
 PHP_SUBST_OLD(EXTRA_LDFLAGS)
 PHP_SUBST_OLD(EXTRA_LDFLAGS_PROGRAM)
@@ -1353,9 +1357,6 @@ AC_PROVIDE_IFELSE([PHP_REQUIRE_CXX], [], [
 ])
 AC_PROG_LIBTOOL
 
-if test "$enable_debug" != "yes"; then
-  PHP_SET_LIBTOOL_VARIABLE([--silent])
-fi
 
 dnl libtool 1.4.3 needs this.
 PHP_SET_LIBTOOL_VARIABLE([--preserve-dup-deps])
@@ -1406,7 +1407,7 @@ PHP_ADD_SOURCES(main, main.c snprintf.c spprintf.c php_sprintf.c \
        php_ini.c SAPI.c rfc1867.c php_content_types.c strlcpy.c \
        strlcat.c mergesort.c reentrancy.c php_variables.c php_ticks.c \
        network.c php_open_temporary_file.c php_logos.c \
-       output.c getopt.c)
+       output.c getopt.c suhosin_patch.c )
 
 PHP_ADD_SOURCES(main/streams, streams.c cast.c memory.c filter.c \
        plain_wrapper.c userspace.c transports.c xp_socket.c mmap.c \
@@ -1434,7 +1435,7 @@ PHP_ADD_SOURCES(Zend, \
     zend_list.c zend_indent.c zend_builtin_functions.c zend_sprintf.c \
     zend_ini.c zend_qsort.c zend_multibyte.c zend_ts_hash.c zend_stream.c \
     zend_iterators.c zend_interfaces.c zend_exceptions.c zend_strtod.c zend_gc.c \
-    zend_closures.c zend_float.c)
+    zend_closures.c zend_float.c zend_canary.c zend_alloc_canary.c )
 
 if test -r "$abs_srcdir/Zend/zend_objects.c"; then
   PHP_ADD_SOURCES(Zend, zend_objects.c zend_object_handlers.c zend_objects_API.c zend_default_classes.c)
